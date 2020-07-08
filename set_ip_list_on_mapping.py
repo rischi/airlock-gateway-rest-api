@@ -81,7 +81,7 @@ mapping_ids = (
 mapping_names = [x['attributes']['name'] for x in resp['data'] if(x['id'] in mapping_ids)]
 
 if not mapping_ids:
-    sys.exit("No mapping found - exit")
+	sys.exit("No mapping found - exit")
 
 # get all ip lists
 resp = json.loads(send_request("GET", "configuration/ip-address-lists"))
@@ -91,9 +91,9 @@ ip_list_ids = [ x['id'] for x in resp['data'] if(re.match(args.iplist, x['attrib
 ip_list_names = [x['attributes']['name'] for x in resp['data'] if(x['id'] in ip_list_ids)]
 
 if not ip_list_ids:
-    sys.exit("IP List '{}' not found".format(args.iplist))
+	sys.exit("IP list matching '{}' not found".format(args.iplist))
 else:
-    ip_list_id = ip_list_ids[0]
+	ip_list_id = ip_list_ids[0]
 
 # patch the config
 for mapping_id in mapping_ids:
@@ -111,13 +111,16 @@ for mapping_id in mapping_ids:
 					} ] + current_ip_list_data
 				}
 
-		send_request("PATCH", "configuration/mappings/{}/relationships/ip-address-{}".format(mapping_id, list_type), json.dumps(data))
+		send_request("PATCH", "configuration/mappings/{}/relationships/ip-address-{}"
+			.format(mapping_id, list_type), json.dumps(data))
 
 if args.confirm:
-	answer = input('Add {}-group(s) "{}" to mapping(s): {}\nContinue? [y/n] '.format(list_type[:-1], ','.join(ip_list_names), '\n\t'.join(sorted(mapping_names))))
+	answer = input('Add {}-group(s) "{}" to mapping(s): {}\nContinue? [y/n] '
+			.format(list_type[:-1], ','.join(ip_list_names), '\n\t'.join(sorted(mapping_names))))
 	if answer != 'y': sys.exit("Nothing changed")
 
-config_comment = 'REST: {} IP list(s) "{}" added to mapping(s) "{}"'.format(list_type[:-1], ','.join(ip_list_names), ','.join(sorted(mapping_names)))
+config_comment = 'REST: {} IP list(s) "{}" added to mapping(s) "{}"' \
+			.format(list_type[:-1], ','.join(ip_list_names), ','.join(sorted(mapping_names)))
 data = { "comment" : config_comment }
 
 # save config
