@@ -32,8 +32,8 @@ group_sel.add_argument("-m", dest="mapping_selector_pattern",
                        metavar="pattern", help="Pattern matching mapping name")
 group_sel.add_argument("-l", dest="mapping_selector_label", metavar="label",
                        help="Label for mapping selection")
-parser.add_argument("-i", dest="iplist", metavar="ip list", required=True,
-                    help="Name of IP list")
+parser.add_argument("-i", dest="iplist", metavar="pattern", required=True,
+                    help="Pattern matching IP list")
 group_type = parser.add_mutually_exclusive_group(required=True)
 group_type.add_argument("-b", dest="blacklist", action="store_true",
                         help="Modify blacklist")
