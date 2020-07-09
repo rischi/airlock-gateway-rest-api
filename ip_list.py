@@ -29,20 +29,21 @@ group_action.add_argument("-r", dest="action", action="store_const",
                           const="remove", help="Remove IP list")
 group_sel = parser.add_mutually_exclusive_group(required=True)
 group_sel.add_argument("-m", dest="mapping_selector_pattern",
-                       metavar="pattern", help="Pattern matching mapping name")
+                       metavar="pattern", help="Pattern matching mapping name, e.g. ^mapping_a$")
 group_sel.add_argument("-l", dest="mapping_selector_label", metavar="label",
                        help="Label for mapping selection")
 parser.add_argument("-i", dest="iplist", metavar="pattern", required=True,
-                    help="Pattern matching IP list")
+                    help="Pattern matching IP list, e.g. ^IP-list99$")
 group_type = parser.add_mutually_exclusive_group(required=True)
-group_type.add_argument("-b", dest="blacklist", action="store_true",
-                        help="Modify blacklist")
 group_type.add_argument("-w", dest="blacklist", action="store_false",
                         help="Modify whitelist")
-parser.add_argument("-c", dest="confirm", action="store_false",
-                    help="Non interative mode - no confirmation needed")
+group_type.add_argument("-b", dest="blacklist", action="store_true",
+                        help="Modify blacklist")
+parser.add_argument("-f", dest="confirm", action="store_false",
+                    help="Force, no confirmation needed")
 
 args = parser.parse_args()
+sys.tracebacklimit = 0
 
 TARGET_GATEWAY = "https://{}".format(args.host)
 
@@ -88,7 +89,7 @@ resp = json.loads(send_request("GET", "configuration/mappings"))
 # filter mappings
 mapping_ids = (
     [x['id'] for x in resp['data']
-        if(re.match(args.mapping_selector_pattern, x['attributes']['name']))]
+        if(re.search(args.mapping_selector_pattern, x['attributes']['name']))]
     if args.mapping_selector_pattern
     else [x['id'] for x in resp['data']
           if(args.mapping_selector_label in x['attributes']['labels'])])
@@ -103,7 +104,7 @@ resp = json.loads(send_request("GET", "configuration/ip-address-lists"))
 
 # filter ip lists
 ip_list_ids = [x['id'] for x in resp['data']
-               if(re.match(args.iplist, x['attributes']['name']))]
+               if(re.search(args.iplist, x['attributes']['name']))]
 ip_list_names = [x['attributes']['name'] for x in resp['data']
                  if(x['id'] in ip_list_ids)]
 
@@ -117,11 +118,6 @@ for mapping_id in mapping_ids:
     resp = json.loads(send_request("GET", "/configuration/mappings/{}"
                                           .format(mapping_id)))
     list_type = "blacklists" if args.blacklist else "whitelists"
-    current_ip_list = (resp['data']['relationships']['ip-address-{}'
-                       .format(list_type)]['data']
-                       if 'ip-address-{}'.format(list_type)
-                          in resp['data']['relationships']
-                       else [])
 
     selected_ip_list = []
     for ip_list_id in ip_list_ids:
@@ -134,13 +130,13 @@ for mapping_id in mapping_ids:
                  .format(mapping_id, list_type), json.dumps(data))
 
 if args.confirm:
-    answer = input('{} {} group(s) "{}" - mapping(s): {}\nContinue? [y/n] '
+    answer = input('{} {} group(s) "{}" - mapping(s): {}\nContinue to save the config? [y/n] '
                    .format(args.action, list_type[:-1],
                            ', '.join(ip_list_names), '\n\t'
                            .join(sorted(mapping_names))))
     answer != 'y' and sys.exit("Nothing changed")
 
-config_comment = 'REST: {} {} IP list(s) "{}" - mapping(s): "{}"' \
+config_comment = 'REST: {} {} IP list(s) "{}" on mapping(s): "{}"' \
     .format(args.action, list_type[:-1],
             ', '.join(ip_list_names), ', '.join(sorted(mapping_names)))
 data = {"comment": config_comment}
