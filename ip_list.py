@@ -78,13 +78,9 @@ def send_request(method, path, body=""):
 # create session
 send_request("POST", "session/create")
 
-# get current active config id
+# get last config (active or saved)
 resp = json.loads(send_request("GET", "configuration/configurations"))
-id = [x["id"] for x in resp["data"]
-      if(x['attributes']["configType"] == "CURRENTLY_ACTIVE")][0]
-
-# load active config
-send_request("POST", "configuration/configurations/{}/load".format(id))
+send_request("POST", "configuration/configurations/{}/load".format(resp['data'][0]['id']))
 
 # get all mappings
 resp = json.loads(send_request("GET", "configuration/mappings"))
